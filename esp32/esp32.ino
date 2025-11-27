@@ -9,14 +9,14 @@
 #include <ArduinoJson.h>
 
 // CREDENCIAIS WIFI
-const char* WIFI_SSID = "galaxy";
-const char* WIFI_PASS = "tcc12345";
+const char* WIFI_SSID = "USUARIO";
+const char* WIFI_PASS = "SENHA";
 
 // CREDENCIAIS DO BROKER MQTT
-const char* MQTT_SERVER = "c1680fbec07c43b2b049ed08ab3dc6e7.s1.eu.hivemq.cloud"; 
-const int MQTT_PORT = 8883;
-const char* MQTT_USER = "galaxy"; 
-const char* MQTT_PASS = "Tcc12345"; 
+const char* MQTT_SERVER = "0000000000000.s1.eu.hivemq.cloud"; 
+const int MQTT_PORT = 0000;
+const char* MQTT_USER = "USUARIO"; 
+const char* MQTT_PASS = "SENHA"; 
 
 // CREDENCIAIS MQTT
 const char* JSON_TOPIC = "luximetro/sala/sensores"; 
