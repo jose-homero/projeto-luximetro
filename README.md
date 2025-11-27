@@ -1,1 +1,1 @@
-"# Luximetro |Espectral IoT"
+"#Luximetro |Espectral IoT"
