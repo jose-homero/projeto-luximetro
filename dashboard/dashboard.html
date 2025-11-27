@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF--8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Espectral (Gráficos e Contagens)</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .status-dot { height: 12px; width: 12px; border-radius: 50%; border: 2px solid #cbd5e1; display: inline-block; transition: background-color 0.3s ease; }
+        .status-dot.connected { background-color: #22c55e; border-color: #16a34a;}
+        .status-dot.disconnected { background-color: #ef4444; border-color: #dc2626; }
+        .status-dot.connecting { background-color: #f59e0b; border-color: #d97706; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        input, button { border-radius: 0.5rem; border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; background-color: #ffffff; transition: all 0.2s ease-in-out; }
+        input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); }
+        button { cursor: pointer; font-weight: 600; }
+        
+        #btn-connect { background-color: #2563eb; color: white; border: none; }
+        #btn-connect:hover { background-color: #1d4ed8; }
+        #btn-download-csv { background-color: #16a34a; color: white; border: none; }
+        #btn-download-csv:hover { background-color: #15803d; }
+        /* NOVO: Estilo para o monitor de logs */
+        #log-monitor::-webkit-scrollbar { width: 8px; }
+        #log-monitor::-webkit-scrollbar-track { background: #1e293b; }
+        #log-monitor::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        #log-monitor::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+
+        <div class="bg-white rounded-xl shadow-md mb-8 p-6">
+            <h1 class="text-3xl font-bold">Dashboard Espectral</h1>
+            <p id="last-update" class="text-sm text-slate-500 mt-1">Nenhuma atualização recebida</p>
+            <div class="flex items-center space-x-2 mt-4">
+                <span id="status-dot" class="status-dot disconnected"></span>
+                <span id="connection-status" class="font-semibold">Desconectado</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md mb-8 p-3 sm:p-6">
+            <h2 class="text-xl font-bold mb-3">Controlo de Conexão</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label class="font-semibold block mb-1 text-sm">Endereço do Broker:</label>
+                    <input type="text" id="broker-url" value="c1680fbec07c43b2b049ed08ab3dc6e7.s1.eu.hivemq.cloud" class="w-full">
+                </div>
+                <div>
+                    <label class="font-semibold block mb-1 text-sm">Porta (WSS):</label>
+                    <input type="number" id="broker-port" value="8884" class="w-full">
+                </div>
+                <div>
+                    <label class="font-semibold block mb-1 text-sm">Tópico (Dados):</label>
+                    <input type="text" id="topic-data" value="luximetro/sala/sensores" class="w-full">
+                </div>
+                <div> <label class="font-semibold block mb-1 text-sm">Tópico (Logs):</label>
+                    <input type="text" id="topic-logs" value="luximetro/sala/logs" class="w-full">
+                </div>
+                <div>
+                    <label class="font-semibold block mb-1 text-sm">Usuário:</label>
+                    <input type="text" id="mqtt-user" value="galaxy" class="w-full">
+                </div>
+                <div>
+                    <label class="font-semibold block mb-1 text-sm">Senha:</label>
+                    <input type="password" id="mqtt-pass" value="Tcc12345" class="w-full">
+                </div>
+                <div class="col-span-1 lg:col-span-2">
+                    <button id="btn-connect" class="w-full h-full">Conectar</button>
+                </div>
+            </div>
+            <div id="data-control" class="hidden items-center gap-4 mt-6 pt-4 border-t border-slate-200">
+                <button id="btn-download-csv">Descarregar CSV</button>
+                <p class="text-sm font-semibold">Leituras armazenadas: <span id="reading-count">0</span></p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md mb-8 p-3 sm:p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Monitor de Logs do Dispositivo</h2>
+                <button id="btn-clear-log" class="text-sm bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-1 px-3 rounded-lg">Limpar</button>
+            </div>
+            <pre id="log-monitor" class="bg-slate-900 text-white font-mono text-sm p-4 rounded-lg h-64 overflow-y-auto">Aguardando conexão para receber logs...</pre>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md mb-8 p-3 sm:p-6">
+            <h2 class="text-xl font-bold mb-4">Leituras (Corrigidas + Clear/NIR)</h2>
+            <div id="counts-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-10 gap-2 sm:gap-4">
+                <div id="initial-counts-message" class="col-span-full p-6 text-center border-2 border-dashed border-gray-300 rounded-lg">
+                    <p class="text-gray-500">Conecte-se para ver as contagens</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md mb-8 p-3 sm:p-6">
+            <h2 class="text-xl font-bold mb-4">Gráfico de Barras (Leitura Atual)</h2>
+            <div id="bar-chart-container" class="relative h-80 sm:h-96">
+                <canvas id="bar-chart"></canvas>
+                <div id="initial-bar-message" class="absolute inset-0 flex items-center justify-center">
+                    <p class="text-gray-500">Conecte-se para ver a leitura atual</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md p-3 sm:p-6">
+            <h2 class="text-xl font-bold mb-4">Gráfico de Linhas (Histórico)</h2>
+            <div id="line-chart-container" class="relative h-80 sm:h-96">
+                <canvas id="history-chart"></canvas>
+                <div id="initial-line-message" class="absolute inset-0 flex items-center justify-center">
+                    <p class="text-gray-500">Conecte-se para ver o histórico</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ui = {
+            statusEl: document.getElementById('connection-status'), statusDot: document.getElementById('status-dot'), connectBtn: document.getElementById('btn-connect'),
+            barChartCanvas: document.getElementById('bar-chart'), historyChartCanvas: document.getElementById('history-chart'), 
+            lastUpdateEl: document.getElementById('last-update'), initialBarMessage: document.getElementById('initial-bar-message'), initialLineMessage: document.getElementById('initial-line-message'),
+            dataControl: document.getElementById('data-control'), downloadBtn: document.getElementById('btn-download-csv'), readingCount: document.getElementById('reading-count'),
+            countsGrid: document.getElementById('counts-grid'), initialCountsMessage: document.getElementById('initial-counts-message'),
+            logMonitor: document.getElementById('log-monitor'), // NOVO
+            clearLogBtn: document.getElementById('btn-clear-log'), // NOVO
+        };
+
+        let mqttClient = null;
+        let barChart = null;
+        let historyChart = null;
+        let storedData = []; 
+        const MAX_HISTORY_POINTS = 30;
+        const MAX_LOG_LINES = 100; // NOVO
+        
+        const channelOrder = [ 'f1_415nm', 'f2_445nm', 'f3_480nm', 'f4_515nm', 'f5_555nm', 'f6_590nm', 'f7_630nm', 'f8_680nm', 'clear', 'nir' ];
+        const channelLabels = channelOrder.map(c => c.split('_')[1] || c.toUpperCase());
+        const channelColors = [ '#8a2be2', '#4b0082', '#00bfff', '#32cd32', '#adff2f', '#ffa500', '#ff4500', '#dc143c', '#a9a9a9', '#696969' ];
+
+        function updateStatus(text, dotClass) { ui.statusEl.textContent = text; ui.statusDot.className = `status-dot ${dotClass}`; }
+
+        function connect() {
+            const url = document.getElementById('broker-url').value.trim();
+            const port = parseInt(document.getElementById('broker-port').value);
+            const dataTopic = document.getElementById('topic-data').value.trim(); // MODIFICADO
+            const logsTopic = document.getElementById('topic-logs').value.trim(); // NOVO
+            const user = document.getElementById('mqtt-user').value.trim();
+            const pass = document.getElementById('mqtt-pass').value;
+            
+            if (!url || !port || !dataTopic || !logsTopic) { alert("Por favor, preencha todos os campos de conexão."); return; }
+
+            mqttClient = new Paho.MQTT.Client(url, port, `dashboard-${Math.random()}`);
+            mqttClient.onConnectionLost = onDisconnect;
+            mqttClient.onMessageArrived = onMessage;
+            updateStatus('A conectar...', 'connecting');
+
+            const connectOptions = {
+                onSuccess: () => {
+                    updateStatus('Conectado', 'connected');
+                    mqttClient.subscribe(dataTopic); // MODIFICADO
+                    mqttClient.subscribe(logsTopic); // NOVO
+                    addLogMessage(`> Subscrito aos tópicos: "${dataTopic}" e "${logsTopic}"`);
+                    ui.connectBtn.textContent = 'Desconectar';
+                    ui.connectBtn.onclick = disconnect;
+                    ui.dataControl.style.display = 'flex';
+                    createOrUpdateBarChart({}); 
+                    createOrUpdateHistoryChart();
+                    createCountDisplays();
+                },
+                onFailure: (response) => { 
+                    updateStatus(`Falha: ${response.errorMessage}`, 'disconnected');
+                    addLogMessage(`> ERRO DE CONEXÃO: ${response.errorMessage}`);
+                },
+                userName: user, password: pass, useSSL: true, timeout: 5
+            };
+            
+            ui.logMonitor.textContent = ''; // Limpa o log ao conectar
+            addLogMessage(`> A tentar conectar a wss://${url}:${port}...`);
+            mqttClient.connect(connectOptions);
+        }
+
+        function onDisconnect(responseObject) {
+            updateStatus('Desconectado', 'disconnected');
+            addLogMessage("> Conexão perdida.");
+            ui.connectBtn.textContent = 'Conectar';
+            ui.connectBtn.onclick = connect;
+            ui.dataControl.style.display = 'none';
+            if (barChart) { barChart.destroy(); barChart = null; }
+            if (historyChart) { historyChart.destroy(); historyChart = null; }
+            ui.initialBarMessage.style.display = 'flex';
+            ui.initialLineMessage.style.display = 'flex';
+            ui.countsGrid.innerHTML = '';
+            const newInitialCountsMessage = ui.initialCountsMessage.cloneNode(true);
+            newInitialCountsMessage.style.display = 'block';
+            ui.countsGrid.appendChild(newInitialCountsMessage);
+            ui.initialCountsMessage = newInitialCountsMessage;
+            storedData = [];
+            ui.readingCount.textContent = 0;
+        }
+
+        function disconnect() { if (mqttClient && mqttClient.isConnected()) { mqttClient.disconnect(); } onDisconnect(); }
+        
+        function getFormattedTimestamp(date = new Date()) { return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`; }
+        function getFullFormattedTimestamp(date = new Date()) { return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()} ${getFormattedTimestamp(date)}`;}
+
+        // MODIFICADO: para lidar com múltiplos tópicos
+        function onMessage(message) {
+            const dataTopic = document.getElementById('topic-data').value.trim();
+            const logsTopic = document.getElementById('topic-logs').value.trim();
+            const now = new Date();
+            
+            if (message.destinationName === dataTopic) {
+                ui.lastUpdateEl.textContent = `Última Atualização de Dados: ${getFullFormattedTimestamp(now)}`;
+                try {
+                    const data = JSON.parse(message.payloadString);
+                    data.full_timestamp = getFullFormattedTimestamp(now);
+                    data.chart_timestamp = getFormattedTimestamp(now);
+                    storedData.push(data);
+                    if (storedData.length > MAX_HISTORY_POINTS) { storedData.shift(); }
+                    ui.readingCount.textContent = storedData.length;
+                    createOrUpdateBarChart(data);
+                    createOrUpdateHistoryChart();
+                    updateCounts(data);
+                } catch (e) { 
+                    console.error("Erro ao processar mensagem de DADOS:", e);
+                    addLogMessage(`> ERRO: JSON inválido recebido no tópico de dados. Conteúdo: ${message.payloadString}`);
+                }
+            } else if (message.destinationName === logsTopic) {
+                addLogMessage(message.payloadString);
+            }
+        }
+        
+        // NOVA FUNÇÃO: Adicionar mensagem ao monitor de logs
+        function addLogMessage(text) {
+            const timestamp = getFormattedTimestamp();
+            const logLine = document.createTextNode(`[${timestamp}] ${text}\n`);
+            ui.logMonitor.appendChild(logLine);
+
+            // Mantém o log com um tamanho máximo e faz scroll para o fim
+            const lines = ui.logMonitor.textContent.split('\n');
+            if (lines.length > MAX_LOG_LINES) {
+                ui.logMonitor.textContent = lines.slice(lines.length - MAX_LOG_LINES).join('\n');
+            }
+            ui.logMonitor.scrollTop = ui.logMonitor.scrollHeight;
+        }
+
+        // O resto das suas funções (createOrUpdateBarChart, createOrUpdateHistoryChart, etc.) permanecem iguais...
+        // ... (cole o resto das suas funções aqui)
+        function createOrUpdateBarChart(data) {
+             ui.initialBarMessage.style.display = 'none';
+             const chartData = channelOrder.map(channel => data[channel] || 0);
+             if (barChart) {
+                 barChart.data.datasets[0].data = chartData;
+                 barChart.update('none');
+             } else {
+                 const ctx = ui.barChartCanvas.getContext('2d');
+                 barChart = new Chart(ctx, {
+                     type: 'bar',
+                     data: { labels: channelLabels, datasets: [{ label: 'Intensidade', data: chartData, backgroundColor: channelColors, borderColor: 'rgba(0, 0, 0, 0.2)', borderWidth: 1 }] },
+                     options: { maintainAspectRatio: false, animation: false, scales: { y: { beginAtZero: true }, x: { ticks: { font: { weight: 'bold' } } } }, plugins: { legend: { display: false } } }
+                 });
+             }
+        }
+         
+        function createOrUpdateHistoryChart() {
+            ui.initialLineMessage.style.display = 'none';
+            const labels = storedData.map(d => d.chart_timestamp);
+            const datasets = channelOrder.map((channelId, index) => ({
+                label: channelLabels[index],
+                data: storedData.map(d => d[channelId] || 0),
+                borderColor: channelColors[index],
+                backgroundColor: channelColors[index] + '33',
+                fill: false,
+                tension: 0.1
+            }));
+            if (historyChart) {
+                historyChart.data.labels = labels;
+                historyChart.data.datasets = datasets;
+                historyChart.update('none');
+            } else {
+                 const ctx = ui.historyChartCanvas.getContext('2d');
+                 historyChart = new Chart(ctx, {
+                     type: 'line',
+                     data: { labels: labels, datasets: datasets },
+                     options: { maintainAspectRatio: false, responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { position: 'top' } } }
+                 });
+            }
+        }
+         
+        function createCountDisplays() {
+            ui.initialCountsMessage.style.display = 'none';
+            ui.countsGrid.innerHTML = '';
+            channelOrder.forEach((channelId, index) => {
+                const countBox = document.createElement('div');
+                countBox.className = 'p-2 border border-slate-200 text-center bg-slate-50 rounded-lg';
+                countBox.innerHTML = `<p class="font-semibold text-xs" style="color: ${channelColors[index]}">${channelLabels[index]}</p><p class="font-bold text-base" id="count-${channelId}">-</p>`;
+                ui.countsGrid.appendChild(countBox);
+            });
+        }
+
+        function updateCounts(data) {
+            channelOrder.forEach(channelId => {
+                const el = document.getElementById(`count-${channelId}`);
+                if (el) {
+                    const value = data[channelId] !== undefined ? parseFloat(data[channelId]).toFixed(2) : '-';
+                    el.textContent = value;
+                }
+            });
+        }
+
+        function downloadCSV() {
+            if (storedData.length === 0) { alert("Nenhum dado para descarregar."); return; }
+            const headers = ['timestamp', ...channelOrder];
+            let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+            storedData.forEach(row => {
+                const csvRow = headers.map(header => {
+                    const value = (header === 'timestamp') ? row['full_timestamp'] : (row[header] !== undefined ? parseFloat(row[header]).toFixed(4) : 0);
+                    return `"${value}"`;
+                }).join(",");
+                csvContent += csvRow + "\n";
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `dados_espectrais_${new Date().toISOString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        ui.connectBtn.onclick = connect;
+        ui.downloadBtn.onclick = downloadCSV;
+        ui.clearLogBtn.onclick = () => { ui.logMonitor.textContent = ''; }; // NOVO
+    </script>
+</body>
+</html>
