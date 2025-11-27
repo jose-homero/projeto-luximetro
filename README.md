@@ -1,1 +1,45 @@
-"#Luximetro |Espectral IoT"
+# Desenvolvimento de Luxímetro Espectral
+
+![Status](https://img.shields.io/badge/Status-Concluído-success)
+![Linguagem](https://img.shields.io/badge/Linguagens-C%2B%2B%20%7C%20Python%20%7C%20JavaScript-blue)
+![Hardware](https://img.shields.io/badge/Hardware-ESP32--C3%20%7C%20AS7341-orange)
+![Licença](https://img.shields.io/badge/Licença-MIT-lightgrey)
+
+Este repositório contém os códigos-fonte, algoritmos de processamento e a interface web desenvolvidos para o **Projeto de Final de Curso em Engenharia Física (UFRGS)**. O projeto consiste em um dispositivo portátil capaz de medir irradiância espectral (Visível + NIR) para aplicações em cronobiologia e ambientes hospitalares.
+
+---
+
+## 📋 Visão Geral
+
+O sistema foi projetado para superar as limitações dos luxímetros comerciais convencionais (que medem apenas RGB ou Lux total), oferecendo uma resolução espectral de **10 canais** (415nm a 910nm).
+
+### Funcionalidades Principais
+* **Hardware IoT:** Coleta de dados espectrais com sensor AS7341 e transmissão via MQTT (ESP32-C3).
+* **Dashboard Web:** Visualização em tempo real de gráficos e dados brutos.
+* **Reconstrução Espectral:** Algoritmos avançados em Python (**Elastic Net** e **Ridge Regression**) para reconstruir curvas espectrais contínuas a partir de dados discretos.
+* **Portabilidade:** Sistema de bateria dedicado com gerenciamento de energia (*Deep Sleep*).
+
+---
+
+## 🛠️ Arquitetura do Projeto
+
+O repositório está organizado da seguinte forma:
+
+```text
+luximetro-espectral/
+│
+├── 📂 firmware/           # Código C++ para o ESP32-C3
+│   ├── main.ino           # Leitura do sensor AS7341 e cliente MQTT
+│   └── libraries/         # (Opcional) Dependências específicas
+│
+├── 📂 dashboard/          # Interface Web (Front-end)
+│   └── index.html         # Dashboard HTML5 + JS (Paho MQTT)
+│
+├── 📂 analise-dados/      # Algoritmos de Processamento (Python)
+│   ├── tcc_minimo.py      # Scripts de calibração e reconstrução (ElasticNet/Ridge)
+│   ├── M1.csv             # Matriz de sensibilidade do sensor
+│   └── gn_list.csv        # Funções de base gaussianas
+│
+└── 📂 docs/               # Documentação e Imagens
+    ├── esquematico.png
+    └── resultados.png
