@@ -15,7 +15,7 @@ O sistema foi projetado para superar as limitações dos luxímetros comerciais 
 ### Funcionalidades Principais
 * **Hardware IoT:** Coleta de dados espectrais com sensor AS7341 e transmissão via MQTT (ESP32-C3).
 * **Dashboard Web:** Visualização das contagens por canal.
-* **Analise de Dados e Calibração:** Algoritmos em Python (**Regressão Linear**, **Soma de Gaussianas**, **Regressão de Ridge**) para reconstruir curvas espectrais contínuas a partir de dados discretos.
+* **Análise de Dados:** Algoritmos em Python (**Elastic Net**, **Ridge Regression**) para reconstruir curvas espectrais contínuas a partir de dados discretos.
 
 ---
 
@@ -26,18 +26,16 @@ O repositório está organizado da seguinte forma:
 ```text
 luximetro-espectral/
 │
-├── 📂 firmware/           # Código C++ para o ESP32-C3
-│   ├── main.ino           # Leitura do sensor AS7341 e cliente MQTT
-│   └── libraries/         # 
+├── 📂 esp32/              # Firmware C++ para o microcontrolador
+│   ├── esp32.ino          # Código principal (Leitura sensor + MQTT)
+│   └── DEPENDENCIES.txt   # Lista de bibliotecas necessárias
 │
 ├── 📂 dashboard/          # Interface Web (Front-end)
-│   └── index.html         # Dashboard HTML5 + JS (PMQTT)
+│   └── dashboard.html     # Dashboard visual (HTML5 + JS)
 │
-├── 📂 analise-dados/      # Algoritmos de Processamento (Python)
-│   ├── tcc_minimo.py      # Scripts de calibração e reconstrução
-│   ├── M1.csv             # Matriz de sensibilidade do sensor
-│   └── gn_list.csv        # Funções de base gaussianas
+├── 📂 análise-dados/      # Scripts de Processamento (Python)
+│   ├── datasets           # Dados brutos para teste (CSVs)
+│   ├── tcc_minimo.py      # Script principal de calibração e gráficos
+│   └── requirements.txt   # Bibliotecas Python necessárias
 │
-└── 📂 docs/               # Documentação e Imagens
-    ├── esquematico.png
-    └── resultados.png
+└── README.md              # Documentação do projeto
