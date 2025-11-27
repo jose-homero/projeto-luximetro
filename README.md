@@ -11,7 +11,7 @@ Este repositório contém os códigos-fonte, algoritmos de processamento e a int
 
 ## 📋 Visão Geral
 
-O sistema foi projetado para superar as limitações dos luxímetros comerciais convencionais (que medem apenas RGB ou Lux total), oferecendo uma resolução espectral de **10 canais** (415nm a 910nm).
+O sistema foi projetado para superar as limitações dos luxímetros comerciais convencionais, oferecendo uma resolução espectral de **10 canais** (400nm a 956nm).
 
 ### Funcionalidades Principais
 * **Hardware IoT:** Coleta de dados espectrais com sensor AS7341 e transmissão via MQTT (ESP32-C3).
