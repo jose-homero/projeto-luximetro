@@ -1,0 +1,7 @@
+Instalar bibliotecas via IDE Arduino 
+
+Adafruit AS7341 (Adafruit)
+PubSubClient (Nick O'Leary)
+ArduinoJason (Benoit Blanchon)
+WifiClientSecure (ESP32)
+Wifi (ESP32)
