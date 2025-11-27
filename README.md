@@ -6,9 +6,7 @@
 ![Protocolo](https://img.shields.io/badge/Protocolo-MQTT-yellow)
 ![Licença](https://img.shields.io/badge/Licença-MIT-lightgrey)
 
-Este repositório contém os códigos-fonte, algoritmos de processamento e a interface web desenvolvidos para o **Projeto de Final de Curso em Engenharia Física (UFRGS)**. O projeto consiste em um dispositivo portátil capaz de medir irradiância espectral (Visível + NIR) para aplicações em cronobiologia e ambientes hospitalares.
-
----
+Este repositório contém os códigos-fonte, algoritmos de processamento e a interface web desenvolvidos para o **Projeto de Final de Curso em Engenharia Física (UFRGS)**. O projeto consiste em um dispositivo portátil capaz de medir irradiância espectral (Visível + NIR).
 
 ## 📋 Visão Geral
 
