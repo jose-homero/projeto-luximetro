@@ -28,13 +28,13 @@ luximetro-espectral/
 │
 ├── 📂 firmware/           # Código C++ para o ESP32-C3
 │   ├── main.ino           # Leitura do sensor AS7341 e cliente MQTT
-│   └── libraries/         # (Opcional) Dependências específicas
+│   └── libraries/         # 
 │
 ├── 📂 dashboard/          # Interface Web (Front-end)
-│   └── index.html         # Dashboard HTML5 + JS (Paho MQTT)
+│   └── index.html         # Dashboard HTML5 + JS (PMQTT)
 │
 ├── 📂 analise-dados/      # Algoritmos de Processamento (Python)
-│   ├── tcc_minimo.py      # Scripts de calibração e reconstrução (ElasticNet/Ridge)
+│   ├── tcc_minimo.py      # Scripts de calibração e reconstrução
 │   ├── M1.csv             # Matriz de sensibilidade do sensor
 │   └── gn_list.csv        # Funções de base gaussianas
 │
