@@ -15,8 +15,8 @@ O sistema foi projetado para superar as limitações dos luxímetros comerciais 
 
 ### Funcionalidades Principais
 * **Hardware IoT:** Coleta de dados espectrais com sensor AS7341 e transmissão via MQTT (ESP32-C3).
-* **Dashboard Web:** Visualização em tempo real de gráficos e dados brutos.
-* **Reconstrução Espectral:** Algoritmos avançados em Python (**Elastic Net** e **Ridge Regression**) para reconstruir curvas espectrais contínuas a partir de dados discretos.
+* **Dashboard Web:** Visualização dos contagens por canal.
+* **Analise de Dados e Calibração:** Algoritmos em Python (**Regressão Linear**, **Soma de Gaussianas**,**Ridge Regression**) para reconstruir curvas espectrais contínuas a partir de dados discretos.
 * **Portabilidade:** Sistema de bateria dedicado com gerenciamento de energia (*Deep Sleep*).
 
 ---
